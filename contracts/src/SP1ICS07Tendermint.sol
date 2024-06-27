@@ -11,17 +11,17 @@ import "forge-std/console.sol";
 /// @custom:poc This is a proof of concept implementation.
 contract SP1ICS07Tendermint {
     /// @notice The verification key for the program.
-    bytes32 public ics07UpdateClientProgramVkey;
+    bytes32 private immutable ics07UpdateClientProgramVkey;
     /// @notice The SP1 verifier contract.
-    ISP1Verifier public verifier;
+    ISP1Verifier private immutable verifier;
 
     /// @notice The ICS07Tendermint client state
     ICS07Tendermint.ClientState public clientState;
     /// @notice The mapping from height to consensus state
-    mapping(uint64 => ICS07Tendermint.ConsensusState) public consensusStates;
+    mapping(uint64 => ICS07Tendermint.ConsensusState) private consensusStates;
 
     /// Allowed clock drift in nanoseconds
-    uint64 public constant ALLOWED_SP1_CLOCK_DRIFT = 30_000_000_000_000; // 30000 seconds
+    uint64 private constant ALLOWED_SP1_CLOCK_DRIFT = 30_000_000_000_000; // 30000 seconds
 
     /// @notice The public value output for the sp1 program.
     struct SP1ICS07TendermintOutput {
@@ -40,7 +40,7 @@ contract SP1ICS07Tendermint {
     /// @notice The environment output for the sp1 program.
     struct Env {
         /// The chain ID of the chain that the client is tracking.
-        string chain_id;
+        bytes chain_id;
         /// Fraction of validator overlap needed to update header
         ICS07Tendermint.TrustThreshold trust_threshold;
         /// Duration of the period since the `LatestTimestamp` during which the
@@ -70,7 +70,7 @@ contract SP1ICS07Tendermint {
             (ICS07Tendermint.ConsensusState)
         );
         consensusStates[
-            clientState.latest_height.revision_height
+            clientState.latest_height_revision_height
         ] = consensusState;
     }
 
@@ -79,8 +79,7 @@ contract SP1ICS07Tendermint {
     function getClientState()
         public
         view
-        returns (ICS07Tendermint.ClientState memory)
-    {
+        returns (ICS07Tendermint.ClientState memory) {
         return clientState;
     }
 
@@ -98,68 +97,59 @@ contract SP1ICS07Tendermint {
     /// @param proof The encoded proof.
     /// @param publicValues The encoded public values.
     function verifyIcs07UpdateClientProof(
-        bytes memory proof,
-        bytes memory publicValues
-    ) public {
-        SP1ICS07TendermintOutput memory output = abi.decode(
-            publicValues,
-            (SP1ICS07TendermintOutput)
-        );
-
-        validatePublicValues(output);
-
+        bytes calldata proof,
+        bytes calldata publicValues
+    ) external {
         // TODO: Make sure that other checks have been made in the proof verification
         // such as the consensus state not being outside the trusting period.
         verifier.verifyProof(ics07UpdateClientProgramVkey, publicValues, proof);
 
+        SP1ICS07TendermintOutput memory output = abi.decode(publicValues,(SP1ICS07TendermintOutput));
+
+        validatePublicValues(output);
+
         // adding the new consensus state to the mapping
-        clientState.latest_height = output.new_height;
-        consensusStates[output.new_height.revision_height] = output
-            .new_consensus_state;
+        consensusStates[output.new_height.revision_height] = output.new_consensus_state;
+        clientState.latest_height_revision_height = output.new_height.revision_height;
+        clientState.latest_height_revision_number = output.new_height.revision_number;
     }
 
     /// @notice Validates the SP1ICS07TendermintOutput public values.
     /// @param output The public values.
     function validatePublicValues(
         SP1ICS07TendermintOutput memory output
-    ) public view {
+    ) private view {
         require(
-            clientState.is_frozen == false,
-            "SP1ICS07Tendermint: client is frozen"
+            !clientState.is_frozen,
+            "SP1ICS07TM: client is frozen"
         );
         // TODO: Make sure this timestamp check is correct
         require(
             block.timestamp * 1e9 <= output.env.now + ALLOWED_SP1_CLOCK_DRIFT,
-            "SP1ICS07Tendermint: invalid timestamp"
+            "SP1ICS07TTM: invalid timestamp"
         );
         require(
-            keccak256(bytes(output.env.chain_id)) ==
-                keccak256(bytes(clientState.chain_id)),
-            "SP1ICS07Tendermint: chain ID mismatch"
+            keccak256(output.env.chain_id)==
+             keccak256(clientState.chain_id),
+            "SP1ICS07TM: chain ID mismatch"
         );
         require(
             output.env.trust_threshold.numerator ==
-                clientState.trust_level.numerator &&
+                clientState.trust_level_numerator &&
                 output.env.trust_threshold.denominator ==
-                clientState.trust_level.denominator,
-            "SP1ICS07Tendermint: trust threshold mismatch"
-        );
-        require(
-            output.env.trusting_period == clientState.trusting_period,
-            "SP1ICS07Tendermint: trusting period mismatch"
+                clientState.trust_level_denominator,
+            "SP1ICS07TM: trust threshold mismatch"
         );
         require(
             output.env.trusting_period == clientState.unbonding_period,
-            "SP1ICS07Tendermint: unbonding period mismatch"
+            "SP1ICS07TM: unbonding period mismatch"
         );
-        require(
-            keccak256(
-                abi.encode(
-                    consensusStates[output.trusted_height.revision_height]
-                )
-            ) == keccak256(abi.encode(output.trusted_consensus_state)),
-            "SP1ICS07Tendermint: trusted consensus state mismatch"
+
+        require(consensusStates[output.trusted_height.revision_height].timestamp == output.trusted_consensus_state.timestamp 
+        && keccak256(consensusStates[output.trusted_height.revision_height].root) == keccak256(output.trusted_consensus_state.root)
+        && keccak256(consensusStates[output.trusted_height.revision_height].next_validators_hash) == keccak256(output.trusted_consensus_state.next_validators_hash),
+            "SP1ICS07TM: trusted consensus state mismatch"
         );
         // TODO: Make sure that we don't need more checks.
-    }
+    }    
 }

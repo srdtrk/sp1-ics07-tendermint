@@ -5,7 +5,7 @@ import "forge-std/console.sol";
 import {Script} from "forge-std/Script.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 import {SP1ICS07Tendermint} from "../src/SP1ICS07Tendermint.sol";
-import {SP1Verifier} from "@sp1-contracts/SP1Verifier.sol";
+import {SP1Verifier} from "@sp1-contracts/v1.0.7-testnet/SP1Verifier.sol";
 import {ICS07Tendermint} from "../src/ics07-tendermint/ICS07Tendermint.sol";
 
 struct SP1ICS07TendermintGenesisJson {
@@ -39,25 +39,27 @@ contract SP1TendermintScript is Script {
         );
 
         (
-            string memory chain_id,
-            ICS07Tendermint.TrustThreshold memory trust_level,
-            ICS07Tendermint.Height memory latest_height,
+            bytes memory chain_id,
+            uint64 trust_level_numerator,
+            uint64 trust_level_denominator,
+            uint64 latest_height_revision_number,
+            uint64 latest_height_revision_height,
             uint64 trusting_period,
             uint64 unbonding_period,
             bool is_frozen
         ) = ics07Tendermint.clientState();
 
         assert(keccak256(bytes(chain_id)) == keccak256(bytes("mocha-4")));
-        assert(trust_level.numerator == 1);
-        assert(trust_level.denominator == 3);
-        assert(latest_height.revision_number == 4);
+        assert(trust_level_numerator == 1);
+        assert(trust_level_denominator == 3);
+        assert(latest_height_revision_number == 4);
         // assert(latest_height.revision_height == 2110658);
         assert(trusting_period == 1_209_600_000_000_000);
         assert(unbonding_period == 1_209_600_000_000_000);
         assert(is_frozen == false);
 
         ICS07Tendermint.ConsensusState memory consensusState = ics07Tendermint
-            .getConsensusState(latest_height.revision_height);
+            .getConsensusState(latest_height_revision_height);
 
         assert(consensusState.timestamp > 0);
         assert(consensusState.root.length > 0);

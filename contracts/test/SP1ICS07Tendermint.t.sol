@@ -7,7 +7,7 @@ import {stdJson} from "forge-std/StdJson.sol";
 import {stdError} from "forge-std/StdError.sol";
 import {ICS07Tendermint} from "../src/ics07-tendermint/ICS07Tendermint.sol";
 import {SP1ICS07Tendermint} from "../src/SP1ICS07Tendermint.sol";
-import {SP1Verifier} from "@sp1-contracts/SP1Verifier.sol";
+import {SP1Verifier} from "@sp1-contracts/v1.0.7-testnet/SP1Verifier.sol";
 import {SP1MockVerifier} from "@sp1-contracts/SP1MockVerifier.sol";
 
 struct SP1ICS07TendermintFixtureJson {
@@ -56,10 +56,10 @@ contract SP1ICS07TendermintTest is Test {
             keccak256(bytes(clientState.chain_id)) ==
                 keccak256(bytes("mocha-4"))
         );
-        assert(clientState.trust_level.numerator == 1);
-        assert(clientState.trust_level.denominator == 3);
-        assert(clientState.latest_height.revision_number == 4);
-        assert(clientState.latest_height.revision_height == 2110658);
+        assert(clientState.trust_level_numerator == 1);
+        assert(clientState.trust_level_denominator == 3);
+        assert(clientState.latest_height_revision_number == 4);
+        assert(clientState.latest_height_revision_height == 2110658);
         assert(clientState.trusting_period == 1_209_600_000_000_000);
         assert(clientState.unbonding_period == 1_209_600_000_000_000);
         assert(clientState.is_frozen == false);
@@ -124,10 +124,10 @@ contract SP1ICS07TendermintTest is Test {
             keccak256(bytes(clientState.chain_id)) ==
                 keccak256(bytes("mocha-4"))
         );
-        assert(clientState.trust_level.numerator == 1);
-        assert(clientState.trust_level.denominator == 3);
-        assert(clientState.latest_height.revision_number == 4);
-        assert(clientState.latest_height.revision_height == 2110668);
+        assert(clientState.trust_level_numerator == 1);
+        assert(clientState.trust_level_denominator == 3);
+        assert(clientState.latest_height_revision_number == 4);
+        assert(clientState.latest_height_revision_height == 2110668);
         assert(clientState.trusting_period == 1_209_600_000_000_000);
         assert(clientState.unbonding_period == 1_209_600_000_000_000);
         assert(clientState.is_frozen == false);
@@ -158,10 +158,10 @@ contract SP1ICS07TendermintTest is Test {
             keccak256(bytes(clientState.chain_id)) ==
                 keccak256(bytes("mocha-4"))
         );
-        assert(clientState.trust_level.numerator == 1);
-        assert(clientState.trust_level.denominator == 3);
-        assert(clientState.latest_height.revision_number == 4);
-        assert(clientState.latest_height.revision_height == 2110668);
+        assert(clientState.trust_level_numerator == 1);
+        assert(clientState.trust_level_denominator == 3);
+        assert(clientState.latest_height_revision_number == 4);
+        assert(clientState.latest_height_revision_height == 2110668);
         assert(clientState.trusting_period == 1_209_600_000_000_000);
         assert(clientState.unbonding_period == 1_209_600_000_000_000);
         assert(clientState.is_frozen == false);

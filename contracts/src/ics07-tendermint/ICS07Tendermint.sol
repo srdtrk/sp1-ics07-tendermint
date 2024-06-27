@@ -24,11 +24,15 @@ contract ICS07Tendermint {
     /// @notice Defines the ICS07Tendermint ClientState for ibc-lite
     struct ClientState {
         /// Chain ID
-        string chain_id;
-        /// Fraction of validator overlap needed to update header
-        TrustThreshold trust_level;
-        /// Latest height the client was updated to
-        Height latest_height;
+        bytes chain_id;
+        /// Fraction of validator overlap needed to update header, Numerator of the fraction
+        uint64 trust_level_numerator;
+        /// Fraction of validator overlap needed to update header, Denominator of the fraction
+        uint64 trust_level_denominator;
+        /// Latest height the client was updated to, Previously known as "epoch"
+        uint64 latest_height_revision_number;
+        /// Latest height the client was updated to, The height of a block
+        uint64 latest_height_revision_height;
         /// duration of the period since the LatestTimestamp during which the
         /// submitted headers are valid for upgrade
         uint64 trusting_period;
