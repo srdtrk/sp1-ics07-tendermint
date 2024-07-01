@@ -5635,6 +5635,7 @@ name = "sp1-ics07-tendermint-update-client"
 version = "0.1.0"
 dependencies = [
  "alloy-sol-types",
+ "bincode",
  "ibc-client-tendermint",
  "ibc-core-client",
  "ibc-core-handler-types",
@@ -5642,7 +5643,6 @@ dependencies = [
  "ibc-primitives",
  "serde",
  "serde_cbor",
- "serde_json",
  "sha2 0.10.8",
  "sp1-ics07-tendermint-shared",
  "sp1-zkvm",

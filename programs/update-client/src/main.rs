@@ -34,12 +34,15 @@ pub fn main() {
     let encoded_2 = sp1_zkvm::io::read_vec();
     let encoded_3 = sp1_zkvm::io::read_vec();
 
-    // input 3: environment
-    let env = serde_cbor::from_slice::<Env>(&encoded_3).unwrap();
+    // input 1: the trusted consensus state
+    let trusted_consensus_state = bincode::deserialize::<SolConsensusState>(&encoded_1)
+        .unwrap()
+        .into();
     // input 2: the proposed header
     let proposed_header = serde_cbor::from_slice::<Header>(&encoded_2).unwrap();
-    // input 1: the trusted consensus state
-    let trusted_consensus_state = SolConsensusState::abi_decode(&encoded_1, true).unwrap();
+    // input 3: environment
+    let env = bincode::deserialize::<Env>(&encoded_3).unwrap();
+    // TODO: find an encoding that works for all the structs above.
 
     let client_id = ClientId::new(TENDERMINT_CLIENT_TYPE, 0).unwrap();
     let chain_id = ChainId::from_str(&env.chain_id).unwrap();
@@ -48,10 +51,8 @@ pub fn main() {
         trusting_period: Duration::from_nanos(env.trusting_period),
         clock_drift: Duration::default(),
     };
-    let ctx = types::validation::ClientValidationCtx::new(
-        env.clone(),
-        trusted_consensus_state.clone().into(),
-    );
+
+    let ctx = types::validation::ClientValidationCtx::new(&env, &trusted_consensus_state);
 
     verify_header::<_, sha2::Sha256>(
         &ctx,
@@ -90,7 +91,7 @@ pub fn main() {
     let new_consensus_state = ConsensusState::from(proposed_header);
 
     let output = SP1ICS07TendermintOutput {
-        trusted_consensus_state,
+        trusted_consensus_state: trusted_consensus_state.into(),
         new_consensus_state: new_consensus_state.into(),
         env,
         trusted_height,

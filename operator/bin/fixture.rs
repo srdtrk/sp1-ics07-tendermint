@@ -7,7 +7,7 @@ use ibc_core_host_types::identifiers::ChainId;
 use serde::{Deserialize, Serialize};
 use sp1_ics07_tendermint_operator::{rpc::TendermintRPCClient, SP1ICS07TendermintProver};
 use sp1_ics07_tendermint_shared::types::sp1_ics07_tendermint::{
-    ClientState, ConsensusState as SolConsensusState, Height, TrustThreshold,
+    ClientState, Height, TrustThreshold,
 };
 use sp1_ics07_tendermint_shared::types::sp1_ics07_tendermint::{Env, SP1ICS07TendermintOutput};
 use sp1_sdk::{utils::setup_logger, HashableKey};
@@ -93,7 +93,8 @@ async fn main() -> anyhow::Result<()> {
             .signed_header
             .header
             .next_validators_hash,
-    };
+    }
+    .into();
     let proposed_header = Header {
         signed_header: target_light_block.signed_header,
         validator_set: target_light_block.validators,
@@ -116,7 +117,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Generate a header update proof for the specified blocks.
     let proof_data = tendermint_prover.generate_ics07_update_client_proof(
-        &trusted_consensus_state.clone().into(),
+        &trusted_consensus_state,
         &proposed_header,
         &contract_env,
     );
@@ -125,9 +126,7 @@ async fn main() -> anyhow::Result<()> {
     let output = SP1ICS07TendermintOutput::abi_decode(bytes, false).unwrap();
 
     let fixture = SP1ICS07TendermintFixture {
-        trusted_consensus_state: hex::encode(
-            SolConsensusState::from(trusted_consensus_state).abi_encode(),
-        ),
+        trusted_consensus_state: hex::encode(trusted_consensus_state.abi_encode()),
         trusted_client_state: hex::encode(trusted_client_state.abi_encode()),
         target_consensus_state: hex::encode(output.new_consensus_state.abi_encode()),
         target_height: args.target_block,

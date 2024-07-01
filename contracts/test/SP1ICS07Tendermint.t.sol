@@ -49,15 +49,27 @@ contract SP1ICS07TendermintTest is Test {
             trustedConsensusHash
         );
 
+        // Mock ICS07Tendermint
         SP1ICS07TendermintFixtureJson memory mockFixture = loadFixture(
             "mock_fixture.json"
         );
+
+        ICS07Tendermint.ConsensusState memory mockTrustedConsensusState = abi
+            .decode(
+                mockFixture.trustedConsensusState,
+                (ICS07Tendermint.ConsensusState)
+            );
+
+        bytes32 mockTrustedConsensusHash = keccak256(
+            abi.encode(mockTrustedConsensusState)
+        );
+
         SP1MockVerifier mockVerifier = new SP1MockVerifier();
         mockIcs07Tendermint = new SP1ICS07Tendermint(
             mockFixture.vkey,
             address(mockVerifier),
             mockFixture.trustedClientState,
-            trustedConsensusHash
+            mockTrustedConsensusHash
         );
 
         ICS07Tendermint.ClientState memory clientState = mockIcs07Tendermint

@@ -10,15 +10,15 @@ use ibc_primitives::Timestamp;
 use sp1_ics07_tendermint_shared::types::sp1_ics07_tendermint::Env;
 
 /// The client validation context.
-pub struct ClientValidationCtx {
-    env: Env,
-    trusted_consensus_state: ConsensusState,
+pub struct ClientValidationCtx<'a, 'b> {
+    env: &'a Env,
+    trusted_consensus_state: &'b ConsensusState,
 }
 
-impl ClientValidationCtx {
+impl<'a, 'b> ClientValidationCtx<'a, 'b> {
     /// Create a new instance of the client validation context.
     #[must_use]
-    pub const fn new(env: Env, trusted_consensus_state: ConsensusState) -> Self {
+    pub const fn new(env: &'a Env, trusted_consensus_state: &'b ConsensusState) -> Self {
         Self {
             env,
             trusted_consensus_state,
@@ -26,7 +26,7 @@ impl ClientValidationCtx {
     }
 }
 
-impl ClientValidationContext for ClientValidationCtx {
+impl<'a, 'b> ClientValidationContext for ClientValidationCtx<'a, 'b> {
     type ClientStateRef = ClientStateWrapper;
     type ConsensusStateRef = ConsensusStateWrapper;
 
@@ -57,7 +57,7 @@ impl ClientValidationContext for ClientValidationCtx {
     }
 }
 
-impl ExtClientValidationContext for ClientValidationCtx {
+impl<'a, 'b> ExtClientValidationContext for ClientValidationCtx<'a, 'b> {
     fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
         Ok(Timestamp::from_nanoseconds(self.env.now).unwrap())
     }
