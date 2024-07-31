@@ -554,6 +554,19 @@
   },
   {
     "type": "function",
+    "name": "misbehaviour",
+    "inputs": [
+      {
+        "name": "",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
     "name": "updateClient",
     "inputs": [
       {
@@ -570,6 +583,19 @@
       }
     ],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "upgradeClient",
+    "inputs": [
+      {
+        "name": "",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "pure"
   },
   {
     "type": "error",
@@ -631,6 +657,11 @@
   },
   {
     "type": "error",
+    "name": "FeatureNotSupported",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "FrozenClientState",
     "inputs": []
   },
@@ -679,6 +710,32 @@
         "name": "actual",
         "type": "bytes",
         "internalType": "bytes"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ProofHeightMismatch",
+    "inputs": [
+      {
+        "name": "expectedRevisionNumber",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "expectedRevisionHeight",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "actualRevisionNumber",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "actualRevisionHeight",
+        "type": "uint64",
+        "internalType": "uint64"
       }
     ]
   },
@@ -769,6 +826,17 @@
         "name": "unbondingPeriod",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "UnknownMembershipProofType",
+    "inputs": [
+      {
+        "name": "proofType",
+        "type": "uint8",
+        "internalType": "uint8"
       }
     ]
   },

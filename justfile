@@ -2,6 +2,7 @@ set dotenv-load
 
 # Build riscv elf file using `~/.sp1/bin/cargo-prove`
 build-programs:
+  just generate-abi
   cd programs/update-client && ~/.sp1/bin/cargo-prove prove build
   mv elf/riscv32im-succinct-zkvm-elf elf/update-client-riscv32im-succinct-zkvm-elf
   @echo "ELF created at 'elf/update-client-riscv32im-succinct-zkvm-elf'"
@@ -24,11 +25,15 @@ build-operator:
 build-contracts:
   @echo "Cleaning up the contracts cache and output directories..."
   -rm -r contracts/cache contracts/out # `-` is used to ignore the error if the directories do not exist
+  @echo "Installing the dependencies..."
+  bun install && forge install
   @echo "Building the contracts..."
   forge build
 
 # Run the Solidity tests using `forge test` command
 test-foundry:
+  @echo "Cleaning up the contracts cache and output directories..."
+  -rm -r contracts/cache contracts/out # `-` is used to ignore the error if the directories do not exist
   forge test -vvv
 
 # Run the Rust tests using `cargo test` command (excluding the sp1-ics07-tendermint-update-client crate)
@@ -64,7 +69,7 @@ fixtures prover:
 # Requires `jq` to be installed on the system
 # Requires `abigen` to be installed on the system to generate the go bindings for e2e tests
 generate-abi:
-  cd contracts && forge install && forge build
+  just build-contracts
   jq '.abi' contracts/out/SP1ICS07Tendermint.sol/SP1ICS07Tendermint.json > contracts/abi/SP1ICS07Tendermint.json
   @echo "ABI file created at 'contracts/abi/SP1ICS07Tendermint.json'"
   @echo "Generating go bindings for the end-to-end tests..."
@@ -75,13 +80,14 @@ generate-abi:
 deploy-contracts:
   @echo "Deploying the SP1ICS07Tendermint contract"
   just genesis
-  cd contracts && forge install
+  just build-contracts
   @echo "Deploying the contract..."
-  cd contracts && forge script script/SP1ICS07Tendermint.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+  forge script contracts/script/SP1ICS07Tendermint.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
 
 # Run the operator using the `cargo run --bin operator` command.
 # This command requires the `.env` file to be present in the root directory.
 operator:
+  just generate-abi
   RUST_LOG=info cargo run --bin operator --release -- start
 
 # Run the e2e tests
@@ -91,11 +97,20 @@ test-e2e testname:
   @echo "Running {{testname}} test..."
   cd e2e/interchaintestv8 && go test -v -run=TestWithSP1ICS07TendermintTestSuite/{{testname}} -timeout 40m
 
-# Lint the Rust, Solidity, and Go code using `cargo fmt`, `forge fmt`, and `golanci-lint` commands
-lint:
+# Lint and fix the Rust, Solidity, and Go code using `cargo fmt`, `forge fmt`, and `golanci-lint` commands
+lint-fix:
   @echo "Linting the Rust code..."
   cargo fmt
   @echo "Linting the Solidity code..."
   forge fmt
   @echo "Linting the Go code..."
   cd e2e/interchaintestv8 && golangci-lint run --fix
+
+# Lint the Rust, Solidity, and Go code using `cargo clippy`, `forge fmt`, `solhint`, and `golanci-lint` commands
+lint-check:
+  @echo "Linting the Rust code..."
+  cargo clippy --all-targets --all-features -- -D warnings
+  @echo "Linting the Solidity code..."
+  forge fmt --check && bun solhint -c .solhint.json 'contracts/**/*.sol'
+  @echo "Linting the Go code..."
+  cd e2e/interchaintestv8 && golangci-lint run
